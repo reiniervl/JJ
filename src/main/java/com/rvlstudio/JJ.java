@@ -6,21 +6,20 @@ import java.io.*;
 public class JJ {
 	private BufferedReader in;
 	private int line = 1;
+	private JSONObject root;
+	
 	private ReadPredicate skipLineComment = (c) -> c != '\n';
 	private ReadPredicate isWhitespace = (c) -> Character.isWhitespace(c);
 	private ReadPredicate isNumber = (c) -> Character.isDigit(c) || c == '-' || c == '.';
-	
-	private ExpectedType isName = (t) -> t == ValueType.STRING;
-	private ExpectedType isValue = (t) -> t == ValueType.STRING || t == ValueType.NUMBER || t == ValueType.NULL || t == ValueType.BOOLEAN || t == ValueType.BEGIN_OBJECT || t == ValueType.BEGIN_ARRAY;
 
   private int pop() {
-			int c = -1;
-			try {
-					c = in.read();
-					if(c == '\n') line++;
-			}
-			catch(IOException e) { System.out.println(e); }
-			return c;
+		int c = -1;
+		try {
+			c = in.read();
+			if(c == '\n') line++;
+		}
+		catch(IOException e) { System.out.println(e); }
+		return c;
 	}
 
   private int peek() {
@@ -123,10 +122,6 @@ public class JJ {
 
         return t;
     }
-	
-	private boolean isExpected(Token t, ExpectedType e) {
-		return e.expected(t.getType());
-	}
 	
 		private Object readArray(ArrayList<Token> atl) {
 		ArrayList<JSONValue> values = new ArrayList<>();
@@ -233,24 +228,20 @@ public class JJ {
 		return jo;
 	}
 
-  public static JJ parse(Reader reader) {
-        return new JJ(reader);
+  public static JSONObject parse(Reader reader) {
+        return new JJ(reader).root;
     }
 
   private JJ(Reader reader) {
 		this.in = new BufferedReader(reader);
 		ArrayList<Token> tl = new ArrayList<>();
 		Token t;
-		while((t = readNext()) != null) {
-				//System.out.println(t);
-				tl.add(t);
-		}
+		while((t = readNext()) != null) tl.add(t);
 		
-		JSONObject j = readMembers(tl);
-		for(Member m : j.getMembers()) System.out.println(m);
+		root = readMembers(tl);
 	}
 	
-	public class Member {
+	public static class Member {
 		private String name;
 		private JSONValue value;
 		
@@ -267,7 +258,7 @@ public class JJ {
 		}
 	}
 
-	public class JSONObject {
+	public static class JSONObject {
 		private ArrayList<Member> members = new ArrayList<>();
 		
 		public Member get(String name) {
@@ -290,7 +281,7 @@ public class JJ {
 		}
 	}
 
-	public class JSONValue {
+	public static class JSONValue {
 		private ValueType type;
 		private Object value;
 
@@ -333,12 +324,7 @@ public class JJ {
     }
 
   private enum ValueType {
-        STRING, NUMBER, NULL, BOOLEAN, OBJECT, ARRAY, BEGIN_OBJECT, END_OBJECT, BEGIN_ARRAY, END_ARRAY, NAME_SEPERATOR, VALUE_SEPERATOR;
-    }
-	
-	@FunctionalInterface
-	private interface ExpectedType {
-		boolean expected(ValueType type);
+		STRING, NUMBER, NULL, BOOLEAN, OBJECT, ARRAY, BEGIN_OBJECT, END_OBJECT, BEGIN_ARRAY, END_ARRAY, NAME_SEPERATOR, VALUE_SEPERATOR;
 	}
 
 	@FunctionalInterface
