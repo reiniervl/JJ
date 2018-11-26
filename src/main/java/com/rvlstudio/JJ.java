@@ -52,19 +52,36 @@ public class JJ {
     }
 
   private String readString() {
-        StringBuilder sb = new StringBuilder();
-        int c = pop();
-        boolean escaped = false;
-        while((c = peek()) != -1) {
-            if(c == '\\') escaped = true;
-            else if(c == '"') {
-                if(escaped) escaped = false;
-                else {pop(); break;}
-            }
+		StringBuilder sb = new StringBuilder();
+		int c = pop();
+		boolean escaped = false;
+		while((c = peek()) != -1) {
+			if(c == '\\') {
+				int c2 = peek(2)[1];
+				if(c2 == '\\') {
+					sb.append("\\");
+				} else if(c2 == 'n') {
+					sb.append("\n");
+				} else if(c2 == '"') {
+					sb.append("\"");
+				} else if(c2 == 'n') {
+					sb.append("\n");
+				} else if(c2 == 't') {
+					sb.append("\t");
+				} else if(c2 == 'r') {
+					sb.append("\r");
+				} else if(c2 == 'b') {
+					sb.append("\b");
+				}
+				pop();pop();
+				continue;
+			} else if(c == '"') {
+				pop(); break;
+			}
 			sb.append((char)pop());
-        }
-        return sb.toString();
-    }
+		}
+		return sb.toString();
+	}
 
   private double readNumber() {
         return Double.parseDouble(readWhile(isNumber));
