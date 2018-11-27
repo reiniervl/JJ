@@ -17,7 +17,8 @@ public class AppTest
     public void shouldAnswerWithTrue() {
 			try(FileReader reader = new FileReader("test.json")) {
 				JJ.JSONObject jo = JJ.parse(reader);
-				for(JJ.Member m : jo.getMembers()) System.out.println(m);
+				System.out.println(((JJ.JSONObject)jo.getMember("query").getValue().getValue()).getMember("count"));
+				System.out.println(jo.<JJ.JSONObject>get("query").<Double>get("count"));
 			} catch(IOException e) {
 				System.out.println(e);
 			}

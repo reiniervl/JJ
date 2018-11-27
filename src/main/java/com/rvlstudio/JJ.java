@@ -3,6 +3,17 @@ package com.rvlstudio;
 import java.util.*;
 import java.io.*;
 
+/**
+* This class contains all the (private) helper functions
+* to parse a Reader input from a JSON source.
+* The only method to use is the factory method 'parse'
+* Since the goal was to keep the code within one file, the 
+* JSON classes (JSONObject, Member, JSONValue) are static.
+*
+* @author		Reinier van Leussen
+* @version	0.2
+* @since		2018-11-25
+*/
 public class JJ {
 	private BufferedReader in;
 	private int line = 1;
@@ -12,6 +23,11 @@ public class JJ {
 	private ReadPredicate isWhitespace = (c) -> Character.isWhitespace(c);
 	private ReadPredicate isNumber = (c) -> Character.isDigit(c) || c == '-' || c == '.';
 
+	/**
+	* Read a character from the Reader object
+	*
+	* @return int The returned int from the read() function, without transformation
+	*/
   private int pop() {
 		int c = -1;
 		try {
@@ -22,6 +38,11 @@ public class JJ {
 		return c;
 	}
 
+	/**
+	* Reads one character and resets the marker
+	*
+	* @return int The returned int from the read() function, without transformation
+	*/
   private int peek() {
         int c = -1;
         try {
@@ -33,6 +54,11 @@ public class JJ {
         return c;
     }
 
+	/**
+	* Reads <i>n</i> characters from the Reader object and resets the marker
+	*
+	* @return int[] The returned int array from the read() function, without transformation
+	*/
   private int[] peek(int n) {
         int[] c = new int[n];
         try {
@@ -44,6 +70,12 @@ public class JJ {
         return c;
     }
 
+	/**
+	* Reads on until the condition is met
+	*
+	* @param rp A ReadPredicate. Only the prepared (private properties) are used.
+	* @return String returns a String containing the read characters
+	*/
   private String readWhile(ReadPredicate rp) {
         StringBuilder sb = new StringBuilder();
         int c = -1;
@@ -51,6 +83,11 @@ public class JJ {
         return sb.toString();
     }
 
+	/**
+	* Reads until an un-escaped quotation mark is read
+	*
+	* @return String The read string
+	*/
   private String readString() {
 		StringBuilder sb = new StringBuilder();
 		int c = pop();
@@ -83,10 +120,20 @@ public class JJ {
 		return sb.toString();
 	}
 
+	/**
+	* Reads a number directly from the Reader
+	*
+	* @return double All numers are returned as double
+	*/
   private double readNumber() {
         return Double.parseDouble(readWhile(isNumber));
     }
 
+	/**
+	* Reads a boolean from the Reader
+	*
+	* @return boolean true or false
+	*/
   private boolean readBoolean() {
         int c = pop();
         if(c == 't') {
@@ -100,47 +147,57 @@ public class JJ {
                 return false;
             }
         } else {
+						//TODO: This should throw a checked exception or it could disrupt a program
             throw new RuntimeException("The third kind of boolean");
         }
         return false;
     }
-
-  private Token readNext() {
-        Token t = null;
-        readWhile(isWhitespace);
-        int c = peek();
-        if(c == -1) {
-            return null;
-        } else if(c == '"') {
-            t = new Token(ValueType.STRING, readString(), line);
-        } else if(c == '-' || Character.isDigit(c)) {
-            t = new Token(ValueType.NUMBER, readNumber(), line);
-        } else if(c == ':') {
-            t = new Token(ValueType.NAME_SEPERATOR, (char)pop(), line);
-        } else if(c == ',') {
-            t = new Token(ValueType.VALUE_SEPERATOR, (char)pop(), line);
-        } else if(c == '{') {
-            t = new Token(ValueType.BEGIN_OBJECT, (char)pop(), line);
-        } else if(c == '}') {
-            t = new Token(ValueType.END_OBJECT, (char)pop(), line);
-        } else if(c == '[') {
-            t = new Token(ValueType.BEGIN_ARRAY, (char)pop(), line);
-        } else if(c == ']') {
-            t = new Token(ValueType.END_ARRAY, (char)pop(), line);
-        } else if(c == 't' || c == 'f') {
-            t = new Token(ValueType.BOOLEAN, readBoolean(), line);
-        } else if(c == 'n') {
-            if(pop() == 'n' && pop() == 'u' && pop() == 'l' && pop() == 'l')
-                t = new Token(ValueType.NULL, "null", line);
-            else throw new RuntimeException("null is nothing, not something");
-        } else {
-            throw new RuntimeException("[" + line + "] Unknown character found: " + (char)c);
-        }
-
-        return t;
-    }
 	
-		private Object readArray(ArrayList<Token> atl) {
+	/**
+	* Reads the next token from the Reader and returns it as a Token object.
+	*
+	* @return Token Contains the type, value and line number
+	*/
+	private Token readNext() {
+		Token t = null;
+		readWhile(isWhitespace);
+		int c = peek();
+		if(c == -1) {
+				return null;
+		} else if(c == '"') {
+				t = new Token(ValueType.STRING, readString(), line);
+		} else if(c == '-' || Character.isDigit(c)) {
+				t = new Token(ValueType.NUMBER, readNumber(), line);
+		} else if(c == ':') {
+				t = new Token(ValueType.NAME_SEPERATOR, (char)pop(), line);
+		} else if(c == ',') {
+				t = new Token(ValueType.VALUE_SEPERATOR, (char)pop(), line);
+		} else if(c == '{') {
+				t = new Token(ValueType.BEGIN_OBJECT, (char)pop(), line);
+		} else if(c == '}') {
+				t = new Token(ValueType.END_OBJECT, (char)pop(), line);
+		} else if(c == '[') {
+				t = new Token(ValueType.BEGIN_ARRAY, (char)pop(), line);
+		} else if(c == ']') {
+				t = new Token(ValueType.END_ARRAY, (char)pop(), line);
+		} else if(c == 't' || c == 'f') {
+				t = new Token(ValueType.BOOLEAN, readBoolean(), line);
+		} else if(c == 'n') {
+				if(pop() == 'n' && pop() == 'u' && pop() == 'l' && pop() == 'l')
+						t = new Token(ValueType.NULL, "null", line);
+				else throw new RuntimeException("null is nothing, not something");
+		} else {
+				throw new RuntimeException("[" + line + "] Unknown character found: " + (char)c);
+		}
+		return t;
+	}
+	
+	/**
+	* Reads a JSON Array
+	*
+	* @return Object The object is actually a JSONValue array
+	*/
+	private Object readArray(ArrayList<Token> atl) {
 		ArrayList<JSONValue> values = new ArrayList<>();
 		for(int i = 0; i < atl.size(); i++) {
 			Token tv = atl.get(i);
@@ -185,7 +242,13 @@ public class JJ {
 		}
 		return values.toArray();
 	}
-
+	
+	/**
+	* Reads all Token's and returns them as Members inside a JSONObject
+	*
+	* @param tl ArrayList containg the Token stream
+	* @return JSONObject Contains all Members
+	*/
 	private JSONObject readMembers(ArrayList<Token> tl) {
 		JSONObject jo = new JSONObject();
 		if(tl.get(0).getType() == ValueType.BEGIN_OBJECT && tl.get(tl.size() - 1).getType() == ValueType.END_OBJECT) {
@@ -245,10 +308,21 @@ public class JJ {
 		return jo;
 	}
 
+	/**
+	* The only (factory) method. Instead of returning a JJ object,
+	* a JSONObject is returned, which is the root object off the JSON input.
+	*
+	* @param reader Like a FileReader it is internally converted to a BufferedReader
+	* @return JSONObject The root JSON object
+	*/
   public static JSONObject parse(Reader reader) {
         return new JJ(reader).root;
     }
 
+	/**
+	* The reader provided as parameter is converted in to a BufferedReader
+	* to support marking used by the <i>peek</i> methods.
+	*/
   private JJ(Reader reader) {
 		this.in = new BufferedReader(reader);
 		ArrayList<Token> tl = new ArrayList<>();
@@ -258,6 +332,9 @@ public class JJ {
 		root = readMembers(tl);
 	}
 	
+	/**
+	* A general class containing the name (key) and the value.
+	*/
 	public static class Member {
 		private String name;
 		private JSONValue value;
@@ -275,13 +352,24 @@ public class JJ {
 		}
 	}
 
+	/**
+	* Members contained in the JSONObject get be retrieved by name
+	* using the <i>getName</i> method.
+	* It's preferred to use the generic <i>get</i> method
+	*/
 	public static class JSONObject {
 		private ArrayList<Member> members = new ArrayList<>();
 		
-		public Member get(String name) {
+		public Member getMember(String name) {
 			for(Member m : members) if(m.getName().equals(name)) return m;
 			System.out.println("Unknown name: " + name);
 			return null;
+		}
+		
+		public <T> T get(String name) {
+			Member m = getMember(name);
+			if(m == null) return null;
+			return (T)m.getValue().getValue();
 		}
 		
 		public ArrayList<Member> getMembers() { return members; }
@@ -298,6 +386,11 @@ public class JJ {
 		}
 	}
 
+	/**
+	* All values are stores as an Object object. This means that casting
+	* casting will be needed to use the value. The type of value is also
+	* stored as a ValueType enum
+	*/
 	public static class JSONValue {
 		private ValueType type;
 		private Object value;
@@ -308,6 +401,7 @@ public class JJ {
 
 		public ValueType getType() { return type; }
 		public Object getValue() { return value; }
+		public <T> T value() { return (T)getValue(); }
 		
 		@Override
 		public String toString() {
@@ -315,35 +409,47 @@ public class JJ {
 			return value.toString();
 		}
 }
+	
+	/**
+	* Helper class for creating a token stream
+	*/
+	private class Token {
+		private ValueType type;
+		private Object value;
+		private int line = 0;
+		
+		public Token(ValueType type, Object value, int line) {
+			this.type = type; this.value = value; this.line = line;
+		}
 
-  private class Token {
-        private ValueType type;
-        private Object value;
-        private int line = 0;
+		public ValueType getType() { return type; }
+		public Object getValue() { return value; }
 
-        public Token(ValueType type, Object value, int line) {
-            this.type = type; this.value = value; this.line = line;
-        }
+		@Override
+		public boolean equals(Object o) {
+			return o instanceof Token && ((Token)o).getValue().equals(value) && ((Token)o).getType() == type;
+		}
 
-        public ValueType getType() { return type; }
-        public Object getValue() { return value; }
+		@Override
+		public String toString() {
+			if(line == 0) return type.toString() + ": " + value.toString();
+			else return "[" + line + "] " + type.toString() + ": " + value.toString();
+		}
+	}
 
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof Token && ((Token)o).getValue().equals(value) && ((Token)o).getType() == type;
-        }
-
-        @Override
-        public String toString() {
-            if(line == 0) return type.toString() + ": " + value.toString();
-            else return "[" + line + "] " + type.toString() + ": " + value.toString();
-        }
-    }
-
+	/**
+	* An enumeration of all the different types of value and tokens.
+	* Would be nicer if they were seperated.
+	*/
   private enum ValueType {
 		STRING, NUMBER, NULL, BOOLEAN, OBJECT, ARRAY, BEGIN_OBJECT, END_OBJECT, BEGIN_ARRAY, END_ARRAY, NAME_SEPERATOR, VALUE_SEPERATOR;
 	}
 
+	/**
+	* Helper interface for the <i>readWhile</i> method
+	*
+	* @see JJ#readWhile(ReadPredicate) readWhile
+	*/
 	@FunctionalInterface
 	private interface ReadPredicate {
         boolean isCharacter(int c);
